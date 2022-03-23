@@ -37,6 +37,10 @@ class AuthController {
 
     return res.json({ message: "Login failed" });
   }
+
+  profile(req: Request, res: Response): Response {
+    return res.json({ data: req.app.locals.credentials });
+  }
 }
 
 export default new AuthController();
