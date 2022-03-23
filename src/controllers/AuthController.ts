@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import PasswordHash from "../utils/PashwordHash";
+import Authentication from "../utils/Authentication";
 const db = require("./../db/models");
 
 class AuthController {
   register = async (req: Request, res: Response): Promise<Response> => {
     let { username, password } = req.body;
-    const hashedPassword: string = await PasswordHash.hash(password);
+    const hashedPassword: string = await Authentication.passwordHash(password);
 
     await db.user.create({
       username,
@@ -14,8 +14,28 @@ class AuthController {
 
     return res.status(201).json({ message: "Register successfully!" });
   };
-  login(req: Request, res: Response): Response {
-    return res.send("");
+  async login(req: Request, res: Response): Promise<Response> {
+    let { username, password } = req.body;
+
+    const user = await db.user.findOne({ where: { username } });
+
+    if (!user) return res.send("User not found");
+
+    // Check Password
+
+    let compare = await Authentication.comparePassword(password, user.password);
+
+    // Generate Token
+    if (compare) {
+      let token = Authentication.generateToken(
+        user.id,
+        username,
+        user.password
+      );
+      return res.json({ message: "login successfully!", token });
+    }
+
+    return res.json({ message: "Login failed" });
   }
 }
 
